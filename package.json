@@ -1,0 +1,12 @@
+{
+  "name": "patch-prove",
+  "private": true,
+  "version": "0.0.1",
+  "description": "Try a patch on a copy of the repo; keep it only if your tests pass.",
+  "type": "module",
+  "scripts": {
+    "test": "bun test tests",
+    "repair": "bun run src/cli.ts",
+    "dev": "bun run --watch src/index.ts"
+  }
+}

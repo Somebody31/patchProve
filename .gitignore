@@ -1,0 +1,15 @@
+node_modules/
+.env
+.env.*
+!.env.example
+
+*.log
+.DS_Store
+*.tsbuildinfo
+coverage/
+
+# Only README.md is published
+*.md
+!README.md
+docs/
+AGENTS.md
