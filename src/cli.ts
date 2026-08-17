@@ -36,6 +36,11 @@ if (!repo || !test) {
   process.exit(2);
 }
 
+if (!process.env.DEEPSEEK_API_KEY) {
+  console.error("set DEEPSEEK_API_KEY in .env");
+  process.exit(2);
+}
+
 const result = await repair({
   repoPath: repo,
   testCommand: test,
@@ -45,11 +50,13 @@ const result = await repair({
 });
 
 console.log("status: " + result.status);
-console.log("attempts: " + result.attempts.length);
 if (result.error) console.log("error: " + result.error);
-if (result.winningEdits.length) {
-  console.log("edits:");
-  for (const e of result.winningEdits) {
+for (const a of result.attempts) {
+  const mark = a.testOk ? "pass" : a.applyOk ? "tests-failed" : "apply-failed";
+  console.log("attempt " + a.n + " " + mark);
+  if (a.rationale) console.log("  " + a.rationale);
+  if (a.error) console.log("  " + a.error);
+  for (const e of a.edits) {
     console.log("  " + e.path);
     console.log("  - " + e.old);
     console.log("  + " + e.new);

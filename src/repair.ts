@@ -36,10 +36,12 @@ export type RepairResult = {
 
 const SKIP = new Set(["node_modules", "dist"]);
 
+// ponytail: first 200 text files, names seen in test output first. Narrow the repo if this misses.
 async function listFiles(
   root: string,
+  testOutput: string,
 ): Promise<Array<{ path: string; content: string }>> {
-  const out: Array<{ path: string; content: string }> = [];
+  const out: Array<{ path: string; content: string; hit: boolean }> = [];
   for await (const rel of new Bun.Glob("**/*.{js,ts,json}").scan({
     cwd: root,
     onlyFiles: true,
@@ -47,10 +49,13 @@ async function listFiles(
     if (rel.split(path.sep).some((p) => SKIP.has(p))) continue;
     const text = await Bun.file(path.join(root, rel)).text();
     if (text.includes("\0")) continue;
-    out.push({ path: rel, content: text.slice(0, 4000) });
-    if (out.length >= 20) break;
+    const hit =
+      testOutput.includes(rel) || testOutput.includes(path.basename(rel));
+    out.push({ path: rel, content: text.slice(0, 4000), hit });
+    if (out.length >= 200) break;
   }
-  return out;
+  out.sort((a, b) => Number(b.hit) - Number(a.hit));
+  return out.slice(0, 20).map(({ path, content }) => ({ path, content }));
 }
 
 export async function repair(options: {
@@ -101,7 +106,7 @@ export async function repair(options: {
         const proposed = await options.propose({
           goal: options.goal,
           testOutput: base.lastOutput,
-          files: await listFiles(sandbox.path),
+          files: await listFiles(sandbox.path, base.lastOutput),
           attempt: n,
         });
         rationale = proposed.rationale;

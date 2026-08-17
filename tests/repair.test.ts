@@ -2,6 +2,7 @@ import { expect, test } from "bun:test";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import type { Edit } from "../src/patch.ts";
+import { parseEdits } from "../src/propose.ts";
 import { repair, type ProposeFn } from "../src/repair.ts";
 
 const fixture = path.join(import.meta.dir, "../fixtures/broken-math");
@@ -89,6 +90,28 @@ test("already-green runs propose zero times", async () => {
   expect(result.status).toBe("already_green");
   expect(calls).toBe(0);
   await sourceStillBroken();
+});
+
+test("propose gets the file named in the failing test", async () => {
+  let paths: string[] = [];
+  const propose: ProposeFn = async (input) => {
+    paths = input.files.map((f) => f.path);
+    return { rationale: "fake", edits: [good] };
+  };
+  await repair({
+    repoPath: fixture,
+    testCommand: "bun test",
+    goal: "make tests pass",
+    propose,
+  });
+  expect(paths.some((p) => p.endsWith("add.js"))).toBe(true);
+});
+
+test("parseEdits reads JSON wrapped in prose", () => {
+  const got = parseEdits(
+    'sure\n{"rationale":"fix add","edits":[{"path":"src/add.js","old":"a - b","new":"a + b"}]}\n',
+  );
+  expect(got.edits[0]?.path).toBe("src/add.js");
 });
 
 test("path escape is rejected and source is untouched", async () => {
