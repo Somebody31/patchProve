@@ -74,4 +74,9 @@ No GitHub app, no opening PRs, no auto-merge, no database, no queue. Those can c
 
 ## Status
 
-Folder and plan only. Implementation starts at step 1.
+CLI + loop work. `bun test tests` is the gate. No GitHub / HTTP yet.
+
+```bash
+bun test tests
+bun run repair -- --repo fixtures/broken-math --test bun test --goal "make tests pass"
+```
